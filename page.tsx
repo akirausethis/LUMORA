@@ -1,6 +1,8 @@
+import Link from 'next/link';
+
 const LoginPage = () => {
- return (
-  <div className="min-h-screen flex">
+  return (
+    <div className="min-h-screen flex">
       {/* Kiri */}
       <div className="w-1/2 flex flex-col items-center justify-center bg-[rgb(168,213,186)] text-white px-8">
         <div className="text-center">
@@ -64,9 +66,12 @@ const LoginPage = () => {
 
           <div className="text-sm text-center">
             Baru di Shopee?{' '}
-            <span className="text-[rgb(168,213,186)] font-semibold cursor-pointer hover:underline">
+            <Link
+              href="/register"
+              className="text-[rgb(168,213,186)] font-semibold hover:underline"
+            >
               Daftar
-            </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -74,5 +79,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage
-
+export default LoginPage;
