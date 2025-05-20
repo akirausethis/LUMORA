@@ -3,6 +3,9 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify"; // Hanya import toast, bukan ToastContainer
+import { CheckCircleIcon } from "@heroicons/react/solid";
+
 
 const AddProductPage = () => {
   const router = useRouter();
@@ -14,54 +17,46 @@ const AddProductPage = () => {
   const [tagInput, setTagInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-  const [availableSubcategories, setAvailableSubcategories] = useState<
-    string[]
-  >([]);
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [revisions, setRevisions] = useState<string | number>("0");
+  const [includedItems, setIncludedItems] = useState<string[]>([""]);
+  const [requirementsQuestions, setRequirementsQuestions] = useState<string[]>([""]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
 
   const categories = [
-    "Graphics & Design",
-    "Digital Marketing",
-    "Writing & Translation",
-    "Video & Animation",
-    "Music & Audio",
-    "Programming & Tech",
-    "Business",
-    "Lifestyle",
-    "Data",
-    "Photography",
-    "AI Services",
-    "Education & Training",
+    "Character Design",
+    "Illustration",
+    "Concept Art",
+    "UI/UX Design",
+    "Branding",
+    "Merch Design",
+    "Graphic Assets",
+    "3D Modeling",
+    "Animation",
+    "Emotes & Badges",
+    "Custom Requests",
   ];
 
   const subcategories: Record<string, string[]> = {
-    "Graphics & Design": ["Logo Design", "Illustration", "Web & Mobile Design"],
-    "Digital Marketing": ["SEO", "Content Marketing", "Email Marketing"],
-    "Writing & Translation": ["Articles", "Translation", "Proofreading"],
-    "Video & Animation": ["Video Editing", "3D Animation", "Whiteboard Videos"],
-    "Music & Audio": ["Voice Over", "Mixing & Mastering", "Music Production"],
-    "Programming & Tech": ["Web Development", "Mobile Apps", "Blockchain"],
-    Business: ["Virtual Assistant", "Market Research", "Financial Consulting"],
-    Lifestyle: ["Online Tutoring", "Gaming", "Wellness"],
-    Data: ["Data Analysis", "Machine Learning", "Big Data"],
-    Photography: ["Product Photography", "Event Photography", "Photo Editing"],
-    "AI Services": [
-      "AI Content Generation",
-      "AI Chatbot",
-      "Prompt Engineering",
-    ],
-    "Education & Training": [
-      "Online Course Creation",
-      "Curriculum Development",
-      "Language Learning",
-    ],
+    "Character Design": ["Original Characters (OC)", "D&D Characters", "Fanart"],
+    "Illustration": ["Portraits", "Full Body", "Scenic Backgrounds"],
+    "Concept Art": ["Environment Design", "Creature Design", "Weapon/Item Design"],
+    "UI/UX Design": ["App Mockups", "Website Layouts", "Game Interfaces"],
+    "Branding": ["Logo Design", "Color Palette", "Visual Identity"],
+    "Merch Design": ["Sticker Design", "T-Shirt Design", "Keychain Art"],
+    "Graphic Assets": ["Icons", "UI Elements", "Game Assets"],
+    "3D Modeling": ["Character Models", "Props", "Low-Poly Art"],
+    "Animation": ["GIFs", "Character Animation", "Animated Emotes"],
+    "Emotes & Badges": ["Twitch Emotes", "Discord Stickers", "Subscriber Badges"],
+    "Custom Requests": ["Couple Art", "Pet Portraits", "Fantasy Scenes"],
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const category = e.target.value;
     setSelectedCategory(category);
     setAvailableSubcategories(subcategories[category] || []);
-    setSelectedSubcategory(""); // Reset subcategory ketika category berubah
+    setSelectedSubcategory("");
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,23 +96,82 @@ const AddProductPage = () => {
     return `${(currentStep / (steps.length - 1)) * 100}%`;
   };
 
-  const handlePublish = () => {
-    const product = {
-      title: productTitle,
-      price: productPrice,
-      image: images[0] ? URL.createObjectURL(images[0]) : null,
-      category: selectedCategory,
-      subcategory: selectedSubcategory, // <-- pastikan ini ada
-      description: description, // <-- pastikan ini ada
-    };
-
-    const existingProducts = JSON.parse(
-      localStorage.getItem("products") || "[]"
-    );
-    existingProducts.push(product);
-    localStorage.setItem("products", JSON.stringify(existingProducts));
-
-    router.push("/seller");
+  const handlePublish = async () => {
+    try {
+      if (!productTitle.trim()) {
+        toast.error("Judul produk tidak boleh kosong.");
+        return; // Hentikan eksekusi jika ada error
+      }
+      if (!productPrice || Number(productPrice) < 5) {
+        toast.error("Harga produk minimal $5.");
+        return; // Hentikan eksekusi jika ada error
+      }
+      if (!selectedCategory) {
+        toast.error("Pilih kategori produk.");
+        return; // Hentikan eksekusi jika ada error
+      }
+      if (!selectedSubcategory) {
+        toast.error("Pilih sub-kategori produk.");
+        return; // Hentikan eksekusi jika ada error
+      }
+      if (images.length === 0) {
+        toast.warning("Disarankan untuk mengunggah setidaknya satu gambar produk.");
+        return;
+      }
+  
+      const newProduct = {
+        id: Date.now().toString(),
+        title: productTitle,
+        price: productPrice,
+        image: images[0] ? URL.createObjectURL(images[0]) : null,
+        category: selectedCategory,
+        subcategory: selectedSubcategory,
+        description: description,
+        deliveryTime: deliveryTime,
+        revisions: revisions,
+        includedItems: includedItems.filter((item) => item.trim() !== ""),
+        requirements: requirementsQuestions.filter(
+          (question) => question.trim() !== ""
+        ),
+        tags: tags,
+      };
+  
+      const existingProducts = JSON.parse(
+        localStorage.getItem("products") || "[]"
+      );
+      existingProducts.push(newProduct);
+      localStorage.setItem("products", JSON.stringify(existingProducts));
+  
+      toast.success(
+        <div className="custom-success-toast">
+          <div className="toast-icon">
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+          </div>
+          <div className="toast-body">
+            <div className="toast-title">Berhasil!</div>
+            <div className="toast-message">Produk Anda telah dipublikasikan.</div>
+          </div>
+          <button className="toast-close-button" onClick={() => toast.dismiss()}>
+            ✕
+          </button>
+        </div>,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false, //  Pastikan ini false
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          className: "custom-success-toast",
+          icon: false,
+        }
+      );
+      await router.push("/seller");
+    } catch (error) {
+      console.error("Error in handlePublish:", error);
+      toast.error("Gagal menambahkan produk. Silakan coba lagi.");
+    }
   };
 
   return (
@@ -288,17 +342,6 @@ const AddProductPage = () => {
               </h2>
 
               <div className="space-y-8">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Package Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                    placeholder="e.g., Basic Package"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Price ($)

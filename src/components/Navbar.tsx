@@ -6,11 +6,17 @@ import NavIcons from "./NavIcons";
 
 const Navbar = () => {
   return (
-    <div className="h-20 border-b border-gray-200 px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64 relative">
+    <div className="sticky top-0 z-50 h-16 bg-white border-b border-gray-100 shadow-sm px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64">
       {/* MOBILE */}
       <div className="h-full flex items-center justify-between md:hidden">
         <Link href="/">
-          <div className="text-2xl tracking-wide">LUMORA</div>
+          <div className="flex items-center">
+            <Image src="/logo.png" alt="Logo Lumora" width={24} height={24} />
+            <div className="ml-2 text-xl font-medium">
+              <span className="text-gray-800">LU</span>
+              <span style={{ color: "#A8D5BA" }}>MORA</span>
+            </div>
+          </div>
         </Link>
         <Menu />
       </div>
@@ -19,31 +25,75 @@ const Navbar = () => {
       <div className="hidden md:flex items-center justify-between h-full w-full">
         {/* LEFT - LOGO */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center gap-3 mr-8">
-            <Image src="/logo.png" alt="" width={24} height={24} />
-            <div className="text-xl tracking-wide font-semibold">LUMORA</div>
+          <Link href="/" className="flex items-center gap-2 mr-10">
+            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5"
+                style={{ color: "#A8D5BA" }}
+              >
+                <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
+              </svg>
+            </div>
+            <div className="text-xl font-medium">
+              <span className="text-gray-800">LU</span>
+              <span style={{ color: "#A8D5BA" }}>MORA</span>
+            </div>
           </Link>
-        </div>
 
-        {/* SEARCH BAR - Takes more space in the middle */}
-        <div className="flex-1 mx-4 max-w-3xl">
-          <SearchBar />
+          <div className="hidden lg:flex items-center space-x-6">
+            <Link
+              href="/explore"
+              className="font-medium text-gray-600 hover:text-green-600 transition-colors"
+            >
+              Jelajahi
+            </Link>
+            <Link
+              href="/portfolio"
+              className="font-medium text-gray-600 hover:text-green-600 transition-colors whitespace-nowrap"
+            >
+              Creator Feeds
+            </Link>
+            <Link
+              href="/addpost"
+              className="font-medium text-gray-600 hover:text-green-600 transition-colors whitespace-nowrap"
+            >
+              Post Karya
+            </Link>
+          </div>
         </div>
 
         {/* RIGHT SECTION */}
-        <div className="flex items-center gap-5">
-          <Link
-            href="/orders"
-            className="text-gray-600 hover:text-gray-900"
-          ></Link>
+        <div className="flex items-center">
           <Link
             href="/seller"
-            className="bg-green-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-green-600 transition"
+            className="mr-4 text-white font-medium px-4 py-1.5 rounded-md shadow-sm hover:shadow transition-all text-sm"
+            style={{
+              background: "linear-gradient(to right, #A8D5BA, #8EC3A7)",
+            }}
           >
             Mulai Berjualan!
           </Link>
-
-          <NavIcons />
+          <div className="flex items-center space-x-3 mr-4">
+            <NavIcons />
+          </div>
+          <Link
+            href="/login"
+            className="mr-4 text-gray-700 font-medium hover:text-green-600 transition-colors"
+          >
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="mr-6 text-white font-medium px-4 py-1.5 rounded-md shadow-sm hover:shadow transition-all text-sm"
+            style={{
+              background: "linear-gradient(to right, #A8D5BA, #8EC3A7)",
+            }}
+          >
+            Sign Up
+          </Link>
         </div>
       </div>
     </div>

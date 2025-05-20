@@ -20,7 +20,7 @@ const WhyUs = () => {
   ];
 
   return (
-    <section className="py-20 mt-10">
+    <section data-aos="fade-up" className="py-20 mt-5">
       <div className="px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64 text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-12">Kenapa pilih kami?</h2>
         <div className="grid md:grid-cols-3 gap-8">

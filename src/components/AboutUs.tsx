@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 
 const AboutUs = () => {
   return (
-    <section className="mt-10 py-16">
+    <section data-aos="fade-up" className="mt-5 py-16">
       <div className="px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64 text-center">
         <div className="flex justify-center mb-6">
           <div className="bg-white p-4 rounded-full shadow-md">
