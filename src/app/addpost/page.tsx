@@ -1,9 +1,50 @@
+// src/app/addpost/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import Image from 'next/image';
+// Hapus impor toast
+// import { toast } from 'react-toastify';
+// Hapus impor CheckCircleIcon dari Heroicons jika tidak digunakan lagi setelah mengganti toast
+// import { CheckCircleIcon } from '@heroicons/react/solid';
+import NotificationModal, { ModalButton } from '@/components/NotificationModal'; // Impor modal dan tipenya
+import {
+    UploadCloudIcon, ImageIcon, TagIcon, UserIcon as LucideUserIcon,
+    TypeIcon, SendIcon, XIcon as LucideXIcon, ArrowLeftIcon, Loader2Icon, Edit3Icon
+} from 'lucide-react'; // Pastikan semua ikon yang dibutuhkan ada di sini
+
+// Tipe untuk PortfolioPost
+interface PortfolioPost {
+  id: string;
+  title: string;
+  author: string;
+  authorId?: string;
+  description: string;
+  images: string[]; // Array URL gambar dari server
+  category: string;
+  createdAt: string;
+}
+
+// Tipe CurrentUser
+type CurrentUser = {
+  id: string;
+  username: string;
+  email: string;
+  role: 'buyer' | 'seller';
+  fullName?: string;
+};
+
+// Tipe untuk state modal
+interface ModalStateType {
+  isOpen: boolean;
+  title: string;
+  message: React.ReactNode;
+  type: 'success' | 'error' | 'warning' | 'info' | 'confirmation';
+  buttons: ModalButton[];
+  onClose?: () => void;
+}
 
 export default function AddPostPage() {
   const [title, setTitle] = useState('');
@@ -11,12 +52,59 @@ export default function AddPostPage() {
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const router = useRouter();
+  const imageUploadRef = useRef<HTMLInputElement>(null);
+
+  const [modalState, setModalState] = useState<ModalStateType>({
+    isOpen: false, title: '', message: '', type: 'info', buttons: [], onClose: undefined,
+  });
+  const closeGenericModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const user: CurrentUser = JSON.parse(storedUser);
+        setCurrentUser(user);
+        setAuthor(user.fullName || user.username || '');
+      } catch (e) {
+        console.error("Gagal parse currentUser untuk AddPostPage:", e);
+        setModalState({isOpen:true, title:"Sesi Tidak Valid", message:"Silakan login kembali untuk membuat post.", type:"error", buttons: [{text: "Login", onClick: ()=>{closeGenericModal(); router.push('/login')}}], onClose: ()=>{closeGenericModal(); router.push('/login')}});
+      }
+    } else {
+      setModalState({isOpen:true, title:"Akses Ditolak", message:"Anda harus login untuk membuat post.", type:"warning", buttons: [{text: "Login", onClick: ()=>{closeGenericModal(); router.push('/login')}}], onClose: ()=>{closeGenericModal(); router.push('/login')}});
+    }
+  }, [router]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newImages = Array.from(e.target.files).slice(0, 5 - images.length);
-      setImages((prevImages) => [...prevImages, ...newImages]);
+      const currentImagesCount = images.length;
+      const filesToUpload = Array.from(e.target.files);
+      const validFiles = filesToUpload.filter(file => {
+          if (file.size > 5 * 1024 * 1024) { // 5MB
+            setModalState({isOpen:true, title:"File Terlalu Besar", message:`File "${file.name}" melebihi batas 5MB.`, type:'warning', buttons:[{text:"OK", onClick:closeGenericModal}], onClose:closeGenericModal});
+            return false;
+          }
+          const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          if (!validImageTypes.includes(file.type)) {
+            setModalState({isOpen:true, title:"Tipe File Salah", message:`File "${file.name}" bukan format gambar yang didukung.`, type:'warning', buttons:[{text:"OK", onClick:closeGenericModal}], onClose:closeGenericModal});
+            return false;
+          }
+          return true;
+      });
+      const newImagesToAdd = validFiles.slice(0, Math.min(5 - currentImagesCount, validFiles.length));
+      if (currentImagesCount + newImagesToAdd.length > 5 && validFiles.length > 0) {
+        setModalState({isOpen:true, title:"Batas Maksimal Gambar", message:"Anda hanya bisa mengunggah total 5 gambar.", type:'warning', buttons:[{text:"OK", onClick:closeGenericModal}], onClose:closeGenericModal});
+        const spaceLeft = 5 - currentImagesCount;
+        setImages((prevImages) => [...prevImages, ...newImagesToAdd.slice(0, spaceLeft)]);
+        return;
+      }
+      if (newImagesToAdd.length > 0) {
+        setImages((prevImages) => [...prevImages, ...newImagesToAdd]);
+      }
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -26,233 +114,208 @@ export default function AddPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+        setModalState({isOpen: true, title: "Aksi Gagal", message: "Sesi Anda tidak valid. Silakan login kembali.", type: "error", buttons: [{text:"Login", onClick: () => {closeGenericModal(); router.push('/login');}}], onClose: () => {closeGenericModal(); router.push('/login');}});
+        return;
+    }
+    let validationMessage = "";
+    if (!title.trim()) validationMessage += "Nama karya tidak boleh kosong.\n";
+    if (!author.trim()) validationMessage += "Nama author tidak boleh kosong.\n";
+    if (!category.trim()) validationMessage += "Kategori karya tidak boleh kosong.\n";
+    if (!description.trim()) validationMessage += "Deskripsi karya tidak boleh kosong.\n";
+    if (images.length === 0) validationMessage += "Mohon unggah setidaknya satu gambar.\n";
 
-    const imageUrls: string[] = [];
-    for (const imageFile of images) {
-      imageUrls.push(URL.createObjectURL(imageFile));
+    if (validationMessage) {
+        setModalState({isOpen:true, title:"Data Belum Lengkap", message: validationMessage.trim(), type:'warning', buttons:[{text:"Saya Mengerti", onClick:closeGenericModal}], onClose:closeGenericModal});
+        return;
+    }
+    setIsSubmitting(true);
+    const uploadedImageUrls: string[] = [];
+    try {
+      for (const imageFile of images) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: `Gagal unggah ${imageFile.name}` }));
+          throw new Error(errorData.error);
+        }
+        const result = await response.json();
+        if (result.fileUrl) {
+          uploadedImageUrls.push(result.fileUrl);
+        } else {
+          throw new Error(`URL file tidak ada di respons API untuk ${imageFile.name}.`);
+        }
+      }
+    } catch (uploadError: any) {
+      setModalState({isOpen:true, title:"Upload Gambar Gagal", message: uploadError.message || "Terjadi kesalahan saat mengunggah gambar.", type:'error', buttons:[{text:"OK", onClick:closeGenericModal}], onClose:closeGenericModal});
+      setIsSubmitting(false); return;
     }
 
-    const newPost = {
-      id: uuidv4(),
-      title,
-      author,
-      description,
-      images: imageUrls, // Simpan array URL objek gambar
-      category: '', // Anda bisa menambahkan input kategori jika diperlukan
-      createdAt: new Date().toISOString(),
+    const newPost: PortfolioPost = {
+      id: uuidv4(), title, author: currentUser.fullName || currentUser.username,
+      authorId: currentUser.id, description, images: uploadedImageUrls,
+      category: category, createdAt: new Date().toISOString(),
     };
 
     try {
       const existingPosts = JSON.parse(localStorage.getItem('designerPosts') || '[]');
-      const updatedPosts = [...existingPosts, newPost];
-      localStorage.setItem('designerPosts', JSON.stringify(updatedPosts));
-      router.push('/portfolio');
+      localStorage.setItem('designerPosts', JSON.stringify([...existingPosts, newPost]));
+      setModalState({
+        isOpen: true, title: "Publikasi Berhasil!", message: "Karya Anda telah berhasil ditambahkan ke portofolio.", type: 'success',
+        buttons: [{text:"Lihat Portofolio", onClick: () => {closeGenericModal(); router.push('/portfolio');}}],
+        onClose: () => {closeGenericModal(); router.push('/portfolio');}
+      });
+      setTitle(''); setCategory(''); setDescription(''); setImages([]);
     } catch (error) {
-      console.error("Error saving post to localStorage:", error);
+      setModalState({isOpen:true, title:"Gagal Publikasi", message:"Terjadi kesalahan saat menyimpan karya Anda.", type:'error', buttons:[{text:"Coba Lagi", onClick:closeGenericModal}], onClose:closeGenericModal});
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-   <main className="flex justify-center items-center w-full min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 px-4 py-12 sm:px-6 lg:px-8">
-     <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 py-6 px-8">
-         <h2 className="text-center text-3xl font-bold text-white">
-           Publikasikan Karyamu!
-         </h2>
-         <p className="mt-2 text-center text-blue-100">
-           Bagikan hasil karyamu ke orang lain
-         </p>
-       </div>
-       
-       <form className="p-8 space-y-6" onSubmit={handleSubmit}>
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div className="space-y-4">
-             <div>
-               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                 Nama Karyamu
-               </label>
-               <input
-                 id="title"
-                 name="title"
-                 type="text"
-                 required
-                 value={title}
-                 onChange={(e) => setTitle(e.target.value)}
-                 className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                 placeholder="Masukkan nama karyamu"
-               />
-             </div>
-             
-             <div>
-               <label htmlFor="author" className="block text-sm font-medium text-gray-700">
-                 Nama Author
-               </label>
-               <div className="mt-1 relative rounded-md shadow-sm">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                   </svg>
-                 </div>
-                 <input
-                   id="author"
-                   name="author"
-                   type="text"
-                   required
-                   value={author}
-                   onChange={(e) => setAuthor(e.target.value)}
-                   className="pl-10 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                   placeholder="Masukkan namamu"
-                 />
-               </div>
-             </div>
-             
-             <div>
-               <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                 Kategori
-               </label>
-               <div className="mt-1 relative rounded-md shadow-sm">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                     <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                   </svg>
-                 </div>
-                 <input
-                   id="category"
-                   name="category"
-                   type="text"
-                   value={category}
-                   onChange={(e) => setCategory(e.target.value)}
-                   className="pl-10 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                   placeholder="Design, UI/UX, Web, dll"
-                 />
-               </div>
-             </div>
-             
-             <div>
-               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                 Deskripsi
-               </label>
-               <textarea
-                 id="description"
-                 name="description"
-                 rows={5}
-                 required
-                 value={description}
-                 onChange={(e) => setDescription(e.target.value)}
-                 className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                 placeholder="Deskripsikan karyamu"
-               ></textarea>
-             </div>
-           </div>
-           
-           <div className="space-y-4">
-             <div>
-               <h3 className="text-lg font-medium text-gray-900 mb-3"></h3>
-               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                 <div className="grid grid-cols-2 gap-3 mb-3">
-                   {images.map((img, index) => (
-                     <div
-                       key={index}
-                       className="relative rounded-lg overflow-hidden h-32 bg-gray-100 group"
-                     >
-                       <Image
-                         src={URL.createObjectURL(img)}
-                         alt={`Uploaded ${index + 1}`}
-                         className="object-cover"
-                         fill
-                       />
-                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-                         <button
-                           type="button"
-                           onClick={() => handleRemoveImage(index)}
-                           className="bg-white text-gray-700 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-50 hover:text-red-500"
-                         >
-                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                             <path
-                               fillRule="evenodd"
-                               d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                               clipRule="evenodd"
-                             />
-                           </svg>
-                         </button>
-                       </div>
-                     </div>
-                   ))}
-                   
-                   {images.length < 5 && (
-                     <label className="relative h-32 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors duration-300">
-                       <div className="text-center">
-                         <svg
-                           className="mx-auto h-10 w-10 text-gray-400"
-                           fill="none"
-                           stroke="currentColor"
-                           viewBox="0 0 24 24"
-                         >
-                           <path
-                             strokeLinecap="round"
-                             strokeLinejoin="round"
-                             strokeWidth="2"
-                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                           />
-                         </svg>
-                         <p className="mt-1 text-xs text-gray-500">
-                           {images.length === 0 ? 'Tambah Gambar' : 'Tambah Lagi'}
-                         </p>
-                       </div>
-                       <input
-                         type="file"
-                         className="hidden"
-                         accept="image/*"
-                         multiple
-                         onChange={handleImageUpload}
-                       />
-                     </label>
-                   )}
-                 </div>
-                 
-                 <div className="flex items-center text-xs text-gray-500 mt-2">
-                   <svg className="w-4 h-4 mr-1 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                   </svg>
-                   <span>Upload sampai dengan 5 Gambar (JPEG, PNG, GIF)</span>
-                 </div>
-                 
-                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-3">
-                   <div 
-                     className="bg-indigo-600 h-1.5 rounded-full" 
-                     style={{ width: `${(images.length / 5) * 100}%` }}
-                   ></div>
-                 </div>
-                 <div className="text-xs text-right mt-1 text-gray-500">
-                   {images.length}/5 images
-                 </div>
-               </div>
-             </div>
-           </div>
-         </div>
-         
-         <div className="pt-5 border-t border-gray-200">
-           <div className="flex justify-end space-x-3">
-             <button
-               type="button"
-               onClick={() => router.push('/portfolio')}
-               className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-             >
-               Batal
-             </button>
-             <button
-               type="submit"
-               className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-             >
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-               </svg>
-               Post Karyamu!
-             </button>
-           </div>
-         </div>
-       </form>
-     </div>
-   </main>
- );
+    <>
+      <NotificationModal {...modalState} />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-sky-100 relative overflow-hidden selection:bg-emerald-500 selection:text-white">
+        <div className="absolute inset-0 opacity-50">
+            <div className="absolute top-0 -left-20 w-72 h-72 md:w-96 md:h-96 bg-emerald-300 rounded-full mix-blend-multiply filter blur-2xl opacity-40 animate-blob"></div>
+            <div className="absolute top-20 -right-20 w-72 h-72 md:w-96 md:h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-2xl opacity-40 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-20 left-10 w-72 h-72 md:w-96 md:h-96 bg-sky-300 rounded-full mix-blend-multiply filter blur-2xl opacity-40 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
+            <div className="lg:w-1/2 flex flex-col items-center justify-center p-8 lg:p-16 text-gray-800">
+              <div className="absolute top-6 left-6 z-20 lg:hidden">
+                    <button onClick={() => router.back()} className="flex items-center gap-2 text-emerald-700 hover:text-emerald-800 transition-colors bg-white/50 backdrop-blur-sm p-2 rounded-full shadow">
+                        <ArrowLeftIcon className="w-5 h-5" /> 
+                    </button>
+                </div>
+              <div className="text-center lg:text-left max-w-lg mt-16 lg:mt-0">
+                  <div className="mb-8">
+                    <div className="inline-flex items-center px-4 py-2 bg-white/60 backdrop-blur-md rounded-full text-emerald-700 text-sm font-medium mb-6 border border-emerald-200/80 shadow-sm">
+                        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full mr-2.5 animate-pulse"></span>
+                        Bagikan Karyamu!
+                    </div>
+                    <h1 className="text-5xl lg:text-6xl font-bold text-gray-800 mb-6 leading-tight">
+                        Publikasikan{' '}
+                        <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                        Inspirasimu!
+                        </span>
+                    </h1>
+                    <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+                        Ini adalah panggungmu! Unggah karya desain, ilustrasi, atau proyek kreatif lainnya dan biarkan dunia melihat bakatmu.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-6 text-gray-700">
+                    <div className="flex items-center"> <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center mr-3 shadow"> <UploadCloudIcon className="w-5 h-5 text-white" /> </div> <span>Unggah Mudah & Cepat</span> </div>
+                    <div className="flex items-center"> <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-full flex items-center justify-center mr-3 shadow"> <ImageIcon className="w-5 h-5 text-white" /> </div> <span>Bangun Portofolio</span> </div>
+                  </div>
+              </div>
+            </div>
+
+            <div className="lg:w-1/2 flex items-center justify-center p-6 sm:p-8">
+              <div className="w-full max-w-xl">
+                  <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/80 p-6 sm:p-8 md:p-10">
+                    <div className="text-center mb-8">
+                        <Edit3Icon className="w-12 h-12 text-emerald-500 mx-auto mb-3 p-2 bg-emerald-100 rounded-full"/>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1.5">
+                        Buat Postingan Karya Baru
+                        </h2>
+                        <p className="text-gray-500 text-sm">
+                        Isi detail karyamu di bawah ini.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                          <label htmlFor="addpost-title" className="block text-sm font-medium text-gray-700 mb-1.5">Judul Karya <span className="text-red-500">*</span></label>
+                          <div className="relative">
+                              <TypeIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                              <input type="text" id="addpost-title" value={title} onChange={(e) => setTitle(e.target.value)}
+                              className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder-gray-400 text-sm"
+                              placeholder="Contoh: Ilustrasi Pemandangan Senja" required />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div>
+                              <label htmlFor="addpost-author" className="block text-sm font-medium text-gray-700 mb-1.5">Nama Kreator</label>
+                              <div className="relative">
+                                  <LucideUserIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                                  <input type="text" id="addpost-author" value={author} onChange={(e) => setAuthor(e.target.value)}
+                                  className="w-full pl-10 pr-3 py-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700" 
+                                  placeholder="Nama Anda atau tim" required readOnly={!!currentUser?.username} />
+                              </div>
+                          </div>
+                          <div>
+                              <label htmlFor="addpost-category" className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Karya <span className="text-red-500">*</span></label>
+                              <div className="relative">
+                                  <TagIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                                  <input type="text" id="addpost-category" value={category} onChange={(e) => setCategory(e.target.value)}
+                                  className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder-gray-400 text-sm"
+                                  placeholder="Misal: Ilustrasi, Desain Karakter" required />
+                              </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label htmlFor="addpost-description" className="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Karya <span className="text-red-500">*</span></label>
+                          <textarea id="addpost-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
+                              className="w-full px-3.5 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder-gray-400 resize-none text-sm"
+                              placeholder="Ceritakan lebih detail tentang karyamu..." required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Unggah Gambar Karya (Maks. 5, @5MB/gambar) <span className="text-red-500">*</span></label>
+                            <div className="bg-gray-50 p-4 sm:p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-emerald-400 transition-colors">
+                                {images.length > 0 && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                                    {images.map((img, index) => (
+                                    <div key={index} className="relative group aspect-w-1 aspect-h-1 bg-gray-200 rounded-md overflow-hidden shadow-sm">
+                                        <Image src={URL.createObjectURL(img)} alt={`Preview ${index + 1}`} fill className="object-cover group-hover:opacity-75 transition-opacity" />
+                                        <button type="button" onClick={() => handleRemoveImage(index)}
+                                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 text-xs">
+                                        <LucideXIcon className="w-4 h-4"/>
+                                        </button>
+                                    </div>
+                                    ))}
+                                </div>
+                                )}
+                                {images.length < 5 && (
+                                <label htmlFor="addpost-imageUpload" className="cursor-pointer">
+                                    <div className="border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-lg p-6 text-center transition-colors bg-white hover:bg-emerald-50/50">
+                                    <UploadCloudIcon className="w-10 h-10 text-gray-400 mx-auto mb-2 group-hover:text-emerald-500" />
+                                    <p className="text-sm font-medium text-gray-700 group-hover:text-emerald-600">
+                                        {images.length === 0 ? 'Pilih Gambar Utama' : 'Tambah Gambar Lain'} ({images.length}/5)
+                                    </p>
+                                    <p className="text-xs text-gray-500">PNG, JPG, GIF, WebP hingga 5MB</p>
+                                    </div>
+                                    <input id="addpost-imageUpload" type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} ref={imageUploadRef} />
+                                </label>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-5">
+                        <button type="button" onClick={() => router.push('/portfolio')}
+                            className="flex-1 order-2 sm:order-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors border border-gray-200 text-sm">
+                            Batal
+                        </button>
+                        <button type="submit" disabled={isSubmitting}
+                            className="flex-1 order-1 sm:order-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 focus:ring-2 focus:ring-emerald-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm shadow-lg hover:shadow-xl">
+                            {isSubmitting ? ( <Loader2Icon className="w-5 h-5 animate-spin" /> ) : ( <SendIcon className="w-5 h-5" /> )}
+                            {isSubmitting ? "Memproses..." : "Publikasikan Karya"}
+                        </button>
+                        </div>
+                    </form>
+                  </div>
+              </div>
+            </div>
+        </div>
+        <style jsx>{`
+            @keyframes blob { 0% {transform: translate(0px, 0px) scale(1);} 33% {transform: translate(30px, -50px) scale(1.1);} 66% {transform: translate(-20px, 20px) scale(0.9);} 100% {transform: translate(0px, 0px) scale(1);} }
+            .animate-blob { animation: blob 10s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+            .animation-delay-2000 { animation-delay: -3s; }
+            .animation-delay-4000 { animation-delay: -5s; }
+        `}</style>
+      </div>
+    </>
+  );
 }

@@ -1,11 +1,13 @@
+// src/app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import ClientWrapper from '@/components/ClientWrapper'; // pastikan path-nya sesuai
-import { ToastContainer } from 'react-toastify'; // Import ToastContainer
-import 'react-toastify/dist/ReactToastify.css'; // Import CSS Toastify
+import './globals.css'; //
+// Hapus import Navbar dan Footer dari sini jika sudah di AppLayout
+// import Navbar from '@/components/Navbar';
+// import Footer from '@/components/Footer';
+import ClientWrapper from '@/components/ClientWrapper'; // Wrapper untuk AOS
+import ToastProvider from '@/components/ToastProvider'; //
+import AppLayout from '@/components/AppLayout'; // Import AppLayout yang baru
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,22 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientWrapper>
-          <Navbar />
-          {children}
-          <Footer />
+        <ClientWrapper> {/* ClientWrapper untuk AOS bisa membungkus AppLayout */}
+          <AppLayout>  {/* Gunakan AppLayout di sini */}
+            {children}
+          </AppLayout>
         </ClientWrapper>
-        <ToastContainer 
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
+        <ToastProvider /> {/* ToastProvider tetap di luar AppLayout jika cakupannya global */}
       </body>
     </html>
   );

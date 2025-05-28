@@ -67,33 +67,9 @@ const Navbar = () => {
 
         {/* RIGHT SECTION */}
         <div className="flex items-center">
-          <Link
-            href="/seller"
-            className="mr-4 text-white font-medium px-4 py-1.5 rounded-md shadow-sm hover:shadow transition-all text-sm"
-            style={{
-              background: "linear-gradient(to right, #A8D5BA, #8EC3A7)",
-            }}
-          >
-            Mulai Berjualan!
-          </Link>
           <div className="flex items-center space-x-3 mr-4">
             <NavIcons />
           </div>
-          <Link
-            href="/login"
-            className="mr-4 text-gray-700 font-medium hover:text-green-600 transition-colors"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="mr-6 text-white font-medium px-4 py-1.5 rounded-md shadow-sm hover:shadow transition-all text-sm"
-            style={{
-              background: "linear-gradient(to right, #A8D5BA, #8EC3A7)",
-            }}
-          >
-            Sign Up
-          </Link>
         </div>
       </div>
     </div>

@@ -9,6 +9,21 @@
     scrollbar-width: none;
 }
 
+
+/* globals.css atau file CSS utama Anda */
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera*/
+}
+
 .custom-success-toast {
     position: relative;
     overflow: hidden;
@@ -104,3 +119,66 @@
 .Toastify__toast--exited .custom-success-toast {
     animation: toast-exit 0.3s ease-in forwards;
 }
+
+.custom-error-toast {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    padding: 12px 16px;
+    background-color: #fef2f2;
+    /* Red background for error */
+    color: #ef4444;
+    /* Red text for error */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    width: 320px;
+    /* Sesuaikan jika perlu */
+    /* Anda bisa menambahkan animasi masuk/keluar seperti pada custom-success-toast */
+}
+
+.custom-error-toast .toast-icon {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.custom-error-toast .toast-body {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.custom-error-toast .toast-title {
+    font-weight: bold;
+    margin-bottom: 2px;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-error-toast .toast-message {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-error-toast .toast-close-button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.custom-error-toast .toast-close-button:hover {
+    opacity: 1;
+}
+
+
+/* Lakukan hal serupa untuk custom-warning-toast dan custom-info-toast dengan warna yang sesuai */

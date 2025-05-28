@@ -1,11 +1,39 @@
+// src/app/addproduct/page.tsx
 "use client";
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify"; // Hanya import toast, bukan ToastContainer
-import { CheckCircleIcon } from "@heroicons/react/solid";
+import { toast } from "react-toastify";
 
+// Impor Heroicons (coba path ini, jika masih error, pastikan library terinstal dengan benar)
+import {
+    PlusCircleIcon as HeroPlusCircleIcon,
+    ChevronRightIcon,
+    ChevronLeftIcon,
+    InformationCircleIcon as HeroInfoIcon
+} from "@heroicons/react/outline"; // Path umum untuk v1 atau v2 (jika /24/outline tidak ada)
+
+// Impor Lucide Icons
+import {
+    CheckCircleIcon as LucideCheckCircleIcon,
+    FileTextIcon, SettingsIcon, ListChecksIcon, ImageIcon as GalleryIcon,
+    TagIcon, DollarSignIcon, ClockIcon, RefreshCwIcon, PackageCheckIcon,
+    HelpCircleIcon, XIcon, UploadCloudIcon, Loader2Icon,
+    TypeIcon
+} from "lucide-react";
+
+// Tipe ProductToAdd
+type ProductToAdd = {
+  id: string; title: string; price: string; image: string | null; images?: string[];
+  category: string; subcategory: string; description: string;
+  deliveryTime?: string | number; revisions?: string | number;
+  includedItems?: string[]; requirements?: string[]; tags?: string[]; sellerId?: string;
+};
+// Tipe CurrentUser
+type CurrentUser = {
+  id: string; username: string; email: string; role: 'buyer' | 'seller';
+};
 
 const AddProductPage = () => {
   const router = useRouter();
@@ -23,692 +51,214 @@ const AddProductPage = () => {
   const [requirementsQuestions, setRequirementsQuestions] = useState<string[]>([""]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const imageUploadRef = useRef<HTMLInputElement>(null);
 
   const categories = [
-    "Character Design",
-    "Illustration",
-    "Concept Art",
-    "UI/UX Design",
-    "Branding",
-    "Merch Design",
-    "Graphic Assets",
-    "3D Modeling",
-    "Animation",
-    "Emotes & Badges",
-    "Custom Requests",
+    "Desain Karakter", "Ilustrasi", "Seni Konsep", "Desain UI/UX", "Branding",
+    "Desain Merchandise", "Aset Grafis", "Pemodelan 3D", "Animasi",
+    "Emote & Lencana", "Permintaan Kustom",
   ];
-
-  const subcategories: Record<string, string[]> = {
-    "Character Design": ["Original Characters (OC)", "D&D Characters", "Fanart"],
-    "Illustration": ["Portraits", "Full Body", "Scenic Backgrounds"],
-    "Concept Art": ["Environment Design", "Creature Design", "Weapon/Item Design"],
-    "UI/UX Design": ["App Mockups", "Website Layouts", "Game Interfaces"],
-    "Branding": ["Logo Design", "Color Palette", "Visual Identity"],
-    "Merch Design": ["Sticker Design", "T-Shirt Design", "Keychain Art"],
-    "Graphic Assets": ["Icons", "UI Elements", "Game Assets"],
-    "3D Modeling": ["Character Models", "Props", "Low-Poly Art"],
-    "Animation": ["GIFs", "Character Animation", "Animated Emotes"],
-    "Emotes & Badges": ["Twitch Emotes", "Discord Stickers", "Subscriber Badges"],
-    "Custom Requests": ["Couple Art", "Pet Portraits", "Fantasy Scenes"],
+  const subcategoriesMap: Record<string, string[]> = {
+    "Desain Karakter": ["Karakter Orisinal (OC)", "Karakter D&D", "Fanart"],
+    "Ilustrasi": ["Potret", "Full Body", "Latar Belakang Pemandangan"],
+    "Seni Konsep": ["Desain Lingkungan", "Desain Makhluk", "Desain Senjata/Item"],
+    "Desain UI/UX": ["Mockup Aplikasi", "Tata Letak Situs Web", "Antarmuka Game"],
+    "Branding": ["Desain Logo", "Palet Warna", "Identitas Visual"],
+    "Desain Merchandise": ["Desain Stiker", "Desain Kaos", "Seni Gantungan Kunci"],
+    "Aset Grafis": ["Ikon", "Elemen UI", "Aset Game"],
+    "Pemodelan 3D": ["Model Karakter", "Props", "Seni Low-Poly"],
+    "Animasi": ["GIF", "Animasi Karakter", "Emote Bergerak"],
+    "Emote & Lencana": ["Emote Twitch", "Stiker Discord", "Lencana Subscriber"],
+    "Permintaan Kustom": ["Seni Pasangan", "Potret Hewan Peliharaan", "Adegan Fantasi"],
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const category = e.target.value;
-    setSelectedCategory(category);
-    setAvailableSubcategories(subcategories[category] || []);
-    setSelectedSubcategory("");
-  };
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const parsedUser: CurrentUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser);
+        if (parsedUser.role !== 'seller') {
+            toast.warn("Hanya seller yang dapat mengakses halaman ini. Anda akan diarahkan.");
+            router.push('/');
+        }
+      } catch (e) {
+        toast.error("Sesi tidak valid, silakan login kembali.");
+        router.push('/login');
+      }
+    } else {
+      toast.error("Anda harus login untuk menambahkan produk.");
+      router.push('/login');
+    }
+
+    if (selectedCategory && subcategoriesMap[selectedCategory]) {
+      setAvailableSubcategories(subcategoriesMap[selectedCategory]);
+    } else {
+      setAvailableSubcategories([]);
+    }
+    if (selectedSubcategory && (!subcategoriesMap[selectedCategory] || !subcategoriesMap[selectedCategory].includes(selectedSubcategory))) {
+      setSelectedSubcategory("");
+    }
+  }, [selectedCategory, router, selectedSubcategory]);
+
+  const isOverviewComplete = !!(productTitle.trim() && selectedCategory && selectedSubcategory && description.trim());
+  const isDetailsComplete = !!(deliveryTime.trim() && (revisions !== "" && revisions !== undefined));
+  const isGalleryComplete = images.length > 0 && !!productPrice.trim();
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selectedFiles = Array.from(e.target.files);
-    setImages((prev) => [...prev, ...selectedFiles].slice(0, 5));
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
-      e.preventDefault();
-      const newTag = tagInput.trim().replace(/,/g, "");
-      if (!tags.includes(newTag)) {
-        setTags((prev) => [...prev, newTag]);
-      }
-      setTagInput("");
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files).filter( (file) => file.size <= 5 * 1024 * 1024 );
+       if (filesArray.length === 0 && e.target.files.length > 0) { toast.error("Semua file yang dipilih melebihi batas 5MB."); return; }
+      if (images.length + filesArray.length > 5) { toast.error("Maksimal 5 gambar yang bisa diunggah."); return; }
+      setImages((prevImages) => [...prevImages, ...filesArray]);
     }
   };
-
-  const handleRemoveTag = (index: number) => {
-    setTags((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveImage = (index: number) => setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  const handleAddTag = () => {
+    if (tagInput.trim() !== "" && !tags.includes(tagInput.trim()) && tags.length < 5) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput("");
+    } else if (tags.length >= 5) {
+      toast.warn("Maksimal 5 tag.")
+    }
   };
-
-  const getProgressPercentage = () => {
-    const steps = [
-      "overview",
-      "pricing",
-      "description",
-      "requirements",
-      "gallery",
-    ];
-    const currentStep = steps.indexOf(currentTab);
-    return `${(currentStep / (steps.length - 1)) * 100}%`;
-  };
+  const handleRemoveTag = (tagToRemove: string) => setTags(tags.filter((tag) => tag !== tagToRemove));
+  const handleAddIncludedItem = () => { if (includedItems.length < 5) setIncludedItems([...includedItems, ""]); else toast.warn("Maksimal 5 poin termasuk.");};
+  const handleUpdateIncludedItem = (index: number, value: string) => { const ni = [...includedItems]; ni[index] = value; setIncludedItems(ni);};
+  const handleRemoveIncludedItem = (index: number) => setIncludedItems(includedItems.filter((_, i) => i !== index));
+  const handleAddRequirementQuestion = () => { if (requirementsQuestions.length < 3) setRequirementsQuestions([...requirementsQuestions, ""]); else toast.warn("Maksimal 3 pertanyaan persyaratan."); };
+  const handleUpdateRequirementQuestion = (index: number, value: string) => { const nq = [...requirementsQuestions]; nq[index] = value; setRequirementsQuestions(nq);};
+  const handleRemoveRequirementQuestion = (index: number) => setRequirementsQuestions(requirementsQuestions.filter((_, i) => i !== index));
 
   const handlePublish = async () => {
+    if (!currentUser) { toast.error("Sesi tidak valid."); router.push('/login'); return; }
+    if (currentUser.role !== 'seller') { toast.warn("Hanya seller yang bisa tambah produk."); return; }
+
+    if (!isOverviewComplete || !isDetailsComplete || !isGalleryComplete) {
+      toast.error("Harap lengkapi semua informasi wajib di setiap tab sebelum menerbitkan.");
+      if (!isOverviewComplete) setCurrentTab("overview");
+      else if (!isDetailsComplete) setCurrentTab("details");
+      else if (!isGalleryComplete) setCurrentTab("gallery");
+      return;
+    }
+    setIsUploading(true);
+    const uploadedImageUrls: string[] = [];
     try {
-      if (!productTitle.trim()) {
-        toast.error("Judul produk tidak boleh kosong.");
-        return; // Hentikan eksekusi jika ada error
-      }
-      if (!productPrice || Number(productPrice) < 5) {
-        toast.error("Harga produk minimal $5.");
-        return; // Hentikan eksekusi jika ada error
-      }
-      if (!selectedCategory) {
-        toast.error("Pilih kategori produk.");
-        return; // Hentikan eksekusi jika ada error
-      }
-      if (!selectedSubcategory) {
-        toast.error("Pilih sub-kategori produk.");
-        return; // Hentikan eksekusi jika ada error
-      }
-      if (images.length === 0) {
-        toast.warning("Disarankan untuk mengunggah setidaknya satu gambar produk.");
-        return;
-      }
-  
-      const newProduct = {
-        id: Date.now().toString(),
-        title: productTitle,
-        price: productPrice,
-        image: images[0] ? URL.createObjectURL(images[0]) : null,
-        category: selectedCategory,
-        subcategory: selectedSubcategory,
-        description: description,
-        deliveryTime: deliveryTime,
-        revisions: revisions,
-        includedItems: includedItems.filter((item) => item.trim() !== ""),
-        requirements: requirementsQuestions.filter(
-          (question) => question.trim() !== ""
-        ),
-        tags: tags,
-      };
-  
-      const existingProducts = JSON.parse(
-        localStorage.getItem("products") || "[]"
-      );
-      existingProducts.push(newProduct);
-      localStorage.setItem("products", JSON.stringify(existingProducts));
-  
-      toast.success(
-        <div className="custom-success-toast">
-          <div className="toast-icon">
-            <CheckCircleIcon className="w-6 h-6 text-green-500" />
-          </div>
-          <div className="toast-body">
-            <div className="toast-title">Berhasil!</div>
-            <div className="toast-message">Produk Anda telah dipublikasikan.</div>
-          </div>
-          <button className="toast-close-button" onClick={() => toast.dismiss()}>
-            ✕
-          </button>
-        </div>,
-        {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false, //  Pastikan ini false
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          className: "custom-success-toast",
-          icon: false,
+        for (const imageFile of images) {
+            const formData = new FormData(); formData.append('file', imageFile);
+            const response = await fetch('/api/upload', { method: 'POST', body: formData });
+            if (!response.ok) {
+                const errorData = await response.json().catch(()=>({error: "Upload error"}));
+                throw new Error(errorData.error || `Gagal unggah ${imageFile.name}`);
+            }
+            const result = await response.json();
+            if(result.fileUrl) uploadedImageUrls.push(result.fileUrl);
+            else throw new Error("URL file tidak ada di respons API upload.");
         }
-      );
-      await router.push("/seller");
-    } catch (error) {
-      console.error("Error in handlePublish:", error);
-      toast.error("Gagal menambahkan produk. Silakan coba lagi.");
+    } catch (uploadError: any) {
+        toast.error(`Upload gambar gagal: ${uploadError.message}`);
+        setIsUploading(false);
+        return;
+    }
+
+    const productId = `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const product: ProductToAdd = {
+      id: productId, title: productTitle, price: productPrice, image: uploadedImageUrls[0] || null, images: uploadedImageUrls,
+      category: selectedCategory, subcategory: selectedSubcategory, description: description, deliveryTime: deliveryTime, revisions: revisions,
+      includedItems: includedItems.filter(item => item.trim() !== ''), requirements: requirementsQuestions.filter(req => req.trim() !== ''),
+      tags: tags, sellerId: currentUser.id,
+    };
+    const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
+    localStorage.setItem("products", JSON.stringify([...existingProducts, product]));
+    setIsUploading(false);
+    toast.success("Produk berhasil diterbitkan!");
+    router.push("/seller");
+  };
+
+  const getTabIcon = (tabKey: string) => {
+    const icons: { [key: string]: React.ReactNode } = {
+      overview: <FileTextIcon className="w-5 h-5" />,
+      details: <SettingsIcon className="w-5 h-5" />,
+      requirements: <ListChecksIcon className="w-5 h-5" />,
+      gallery: <GalleryIcon className="w-5 h-5" />,
+    };
+    return icons[tabKey] || null;
+  };
+
+  const getCompletionStatus = (tabKey: string): boolean => {
+    switch (tabKey) {
+      case "overview": return isOverviewComplete;
+      case "details": return isDetailsComplete;
+      case "requirements": return true;
+      case "gallery": return isGalleryComplete;
+      default: return false;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white sticky top-0 z-10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Create a New Product
-            </h1>
-            <Link href="/seller" className="text-gray-600 hover:text-gray-900">
-              Cancel
-            </Link>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-sky-100 selection:bg-emerald-500 selection:text-white">
+      <div className="container mx-auto py-8 px-4 max-w-5xl">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-4 shadow-lg">
+             <HeroPlusCircleIcon className="w-8 h-8 text-white" />
           </div>
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className="bg-blue-600 h-2.5 rounded-full transition-all"
-              style={{ width: getProgressPercentage() }}
-            />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent mb-2">
+            Tambahkan Produk Baru
+          </h1>
+          <p className="text-gray-600 text-lg">Publikasikan layanan terbaikmu dan jangkau klien potensial!</p>
+        </div>
+
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200/70 overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 md:p-8">
+            {/* ... (Progress Steps JSX - pastikan ikon menggunakan className untuk size) ... */}
+            <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center max-w-full mx-auto">
+              {[
+                { key: "overview", label: "Ikhtisar Produk", step: 1 },
+                { key: "details", label: "Detail Layanan", step: 2 },
+                { key: "requirements", label: "Kebutuhan Klien", step: 3 },
+                { key: "gallery", label: "Galeri & Harga", step: 4 }
+              ].map((tabItem, index, arr) => (
+                <React.Fragment key={tabItem.key}>
+                  <button onClick={() => setCurrentTab(tabItem.key)}
+                    className={`group flex items-center space-x-2 md:space-x-3 transition-all duration-300 ${ currentTab === tabItem.key ? "text-white" : "text-emerald-100 hover:text-white opacity-70 hover:opacity-100" }`}>
+                    <div className={`relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition-all duration-300 ${
+                      currentTab === tabItem.key ? "bg-white text-emerald-600 border-white shadow-lg scale-110"
+                      : getCompletionStatus(tabItem.key) ? "bg-green-400/80 text-white border-green-300/70" 
+                      : "border-emerald-200/50 text-emerald-100 group-hover:border-white group-hover:text-white" }`}>
+                      {getCompletionStatus(tabItem.key) && currentTab !== tabItem.key ? (
+                         <LucideCheckCircleIcon className="w-5 h-5 md:w-6 md:h-6" />
+                      ) : ( <span className="font-bold text-sm">{getTabIcon(tabItem.key) || tabItem.step}</span> )}
+                    </div>
+                    <div className="text-left"> <div className={`text-xs md:text-sm font-medium transition-colors duration-300`}>Langkah {tabItem.step}</div> <div className={`hidden sm:block text-sm md:text-base font-semibold transition-colors duration-300`}>{tabItem.label}</div> </div>
+                  </button>
+                  {index < arr.length - 1 && ( <div className={`hidden md:block flex-grow h-0.5 mx-2 md:mx-4 transition-colors duration-300 ${ getCompletionStatus(tabItem.key) ? "bg-green-300/70" : "bg-emerald-200/40" }`} /> )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
-          {/* Tabs */}
-          <div className="flex mt-6 border-b overflow-x-auto no-scrollbar">
-            {[
-              "overview",
-              "pricing",
-              "description",
-              "requirements",
-              "gallery",
-            ].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setCurrentTab(tab)}
-                className={`pb-4 px-6 font-medium ${
-                  currentTab === tab
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {tab[0].toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+          
+          <div className="p-6 md:p-8 lg:p-10">
+            {currentTab === "overview" && (
+              <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
+                <div> <label htmlFor="productTitle" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><FileTextIcon className="w-4 h-4 mr-2 text-emerald-600"/>Judul Produk <span className="text-red-500 ml-1">*</span></label> <input type="text" id="productTitle" value={productTitle} onChange={(e) => setProductTitle(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder="Contoh: Desain Logo Profesional untuk Startup Kuliner"/> </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div> <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><ListChecksIcon className="w-4 h-4 mr-2 text-emerald-600"/>Kategori Utama <span className="text-red-500 ml-1">*</span></label> <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"> <option value="">-- Pilih Kategori --</option> {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))} </select> </div>
+                    <div> <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><ListChecksIcon className="w-4 h-4 mr-2 text-emerald-600"/>Sub-kategori <span className="text-red-500 ml-1">*</span></label> <select id="subcategory" value={selectedSubcategory} onChange={(e) => setSelectedSubcategory(e.target.value)} disabled={!selectedCategory || availableSubcategories.length === 0} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm disabled:bg-gray-100"> <option value="">-- Pilih Sub-kategori --</option> {availableSubcategories.map((sub) => (<option key={sub} value={sub}>{sub}</option>))} </select> </div>
+                </div>
+                <div> <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"> <TypeIcon className="w-4 h-4 mr-2 text-emerald-600"/> Deskripsi Produk <span className="text-red-500 ml-1">*</span> </label> <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={5} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 resize-none text-sm" placeholder="Jelaskan secara detail layanan yang Anda tawarkan..."></textarea> </div>
+                <div className="flex justify-end pt-6"> <button onClick={() => setCurrentTab("details")} disabled={!isOverviewComplete} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"> Lanjut ke Detail <ChevronRightIcon className="w-5 h-5"/> </button> </div>
+              </div>
+            )}
+            {currentTab === "details" && ( <div className="space-y-6 animate-in slide-in-from-right-5 duration-300"> <div className="text-center mb-8"> <h2 className="text-2xl font-bold text-gray-800 mb-1">Detail Layanan</h2> <p className="text-gray-600 text-sm">Spesifikasi waktu, revisi, dan apa saja yang termasuk.</p> </div> <div className="grid md:grid-cols-2 gap-6"> <div> <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><ClockIcon className="w-4 h-4 mr-2 text-emerald-600"/>Waktu Pengerjaan (hari) <span className="text-red-500 ml-1">*</span></label> <input type="number" id="deliveryTime" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} min="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder="Contoh: 3"/> </div> <div> <label htmlFor="revisions" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><RefreshCwIcon className="w-4 h-4 mr-2 text-emerald-600"/>Jumlah Revisi <span className="text-red-500 ml-1">*</span></label> <select id="revisions" value={String(revisions)} onChange={(e) => setRevisions(e.target.value === "unlimited" ? "unlimited" : parseInt(e.target.value))} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"> <option value="0">0 Kali</option> <option value="1">1 Kali</option> <option value="2">2 Kali</option> <option value="3">3 Kali</option> <option value="5">5 Kali</option> <option value="unlimited">Tak Terbatas</option> </select> </div> </div> <div> <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><PackageCheckIcon className="w-4 h-4 mr-2 text-emerald-600"/>Yang Termasuk dalam Layanan (Maks. 5)</label> <div className="space-y-2.5"> {includedItems.map((item, index) => ( <div key={index} className="flex items-center gap-2"> <input type="text" value={item} onChange={(e) => handleUpdateIncludedItem(index, e.target.value)} className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder={`Poin ${index + 1} (mis: File master AI/PSD)`}/> {includedItems.length > 1 && ( <button type="button" onClick={() => handleRemoveIncludedItem(index)} className="p-2 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"> <XIcon className="w-[18px] h-[18px]"/> </button> )} </div> ))} {includedItems.length < 5 && ( <button type="button" onClick={handleAddIncludedItem} className="w-full mt-2 text-sm text-emerald-600 border-2 border-dashed border-emerald-400 hover:border-emerald-600 hover:bg-emerald-50 rounded-lg py-2.5 flex items-center justify-center gap-1.5 transition-colors"> <HeroPlusCircleIcon className="w-4 h-4"/> Tambah Poin </button> )} </div> </div> <div className="flex justify-between pt-6"> <button onClick={() => setCurrentTab("overview")} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 transition-colors text-base"><ChevronLeftIcon className="w-5 h-5"/> Kembali</button> <button onClick={() => setCurrentTab("requirements")} disabled={!isDetailsComplete} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"> Lanjut <ChevronRightIcon className="w-5 h-5"/> </button> </div> </div> )}
+            {currentTab === "requirements" && ( <div className="space-y-6 animate-in slide-in-from-right-5 duration-300"> <div className="text-center mb-8"> <h2 className="text-2xl font-bold text-gray-800 mb-1">Kebutuhan dari Klien</h2> <p className="text-gray-600 text-sm">Informasi apa saja yang Anda perlukan?</p> </div> <div className="p-4 bg-sky-50/70 border border-sky-200 rounded-lg text-sm text-sky-700 flex items-start gap-2"> <HeroInfoIcon className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5"/> <div><strong className="font-medium">Tips:</strong> Ajukan pertanyaan yang jelas dan spesifik.</div></div> <div> <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><HelpCircleIcon className="w-4 h-4 mr-2 text-emerald-600"/>Pertanyaan untuk Klien (Maks. 3)</label> <div className="space-y-2.5"> {requirementsQuestions.map((req, index) => ( <div key={index} className="flex items-center gap-2"> <input type="text" value={req} onChange={(e) => handleUpdateRequirementQuestion(index, e.target.value)} className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder={`Pertanyaan ${index + 1}`}/> {requirementsQuestions.length > 1 && ( <button type="button" onClick={() => handleRemoveRequirementQuestion(index)} className="p-2 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"> <XIcon className="w-[18px] h-[18px]"/> </button> )} </div> ))} {requirementsQuestions.length < 3 && ( <button type="button" onClick={handleAddRequirementQuestion} className="w-full mt-2 text-sm text-emerald-600 border-2 border-dashed border-emerald-400 hover:border-emerald-600 hover:bg-emerald-50 rounded-lg py-2.5 flex items-center justify-center gap-1.5 transition-colors"> <HeroPlusCircleIcon className="w-4 h-4"/> Tambah Pertanyaan </button> )} </div> </div> <div className="flex justify-between pt-6"> <button onClick={() => setCurrentTab("details")} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 transition-colors text-base"><ChevronLeftIcon className="w-5 h-5"/> Kembali</button> <button onClick={() => setCurrentTab("gallery")} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all text-base"> Lanjut ke Galeri <ChevronRightIcon className="w-5 h-5"/> </button> </div> </div> )}
+            {currentTab === "gallery" && ( <div className="space-y-6 animate-in slide-in-from-right-5 duration-300"> <div className="text-center mb-8"> <h2 className="text-2xl font-bold text-gray-800 mb-1">Galeri Karya & Harga</h2> <p className="text-gray-600 text-sm">Pamerkan contoh karyamu dan tentukan harganya.</p> </div> <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-start"> <div className="space-y-6"> <div> <label htmlFor="productPrice" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><DollarSignIcon className="w-4 h-4 mr-2 text-emerald-600"/>Harga Produk (IDR) <span className="text-red-500 ml-1">*</span></label> <div className="relative"> <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium pointer-events-none text-sm">Rp</span> <input type="number" id="productPrice" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} min="10000" step="1000" className="w-full pl-9 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder="Contoh: 500000"/> </div> </div> <div> <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><TagIcon className="w-4 h-4 mr-2 text-emerald-600"/>Tag Pencarian (Maks. 5)</label> <div className="flex flex-wrap gap-2 mb-2"> {tags.map((tag) => ( <span key={tag} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200"> {tag} <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1.5 -mr-0.5 text-emerald-500 hover:text-emerald-700"> <XIcon className="w-[12px] h-[12px]"/> </button> </span> ))} </div> {tags.length < 5 && ( <div className="flex gap-2"> <input type="text" id="tagInput" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyPress={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag();}}} className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-sm" placeholder="Tambah tag..."/> <button type="button" onClick={handleAddTag} className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-semibold transition-colors">Tambah</button> </div> )} <p className="text-xs text-gray-500 mt-1">Pisahkan dengan enter atau klik tambah.</p> </div> </div> <div> <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><GalleryIcon className="w-4 h-4 mr-2 text-emerald-600"/>Gambar Produk (Maks. 5) <span className="text-red-500 ml-1">*</span></label> <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3"> {images.map((file, index) => ( <div key={index} className="relative aspect-w-1 aspect-h-1 border-2 border-gray-200 rounded-lg overflow-hidden group/image hover:border-emerald-400 transition-colors shadow-sm"> <Image src={URL.createObjectURL(file)} alt={`Preview ${index+1}`} layout="fill" className="object-cover group-hover/image:scale-105 transition-transform"/> <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/40 transition-colors flex items-center justify-center"> {index === 0 && (<span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">Utama</span>)} <button type="button" onClick={() => handleRemoveImage(index)} className="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover/image:opacity-100 transform scale-75 group-hover/image:scale-100" aria-label="Hapus"> <XIcon className="w-[14px] h-[14px]"/> </button> </div> </div> ))} {images.length < 5 && ( <label htmlFor="imageUploadInput" className="flex flex-col items-center justify-center aspect-w-1 aspect-h-1 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/50 transition-all p-2 text-center"> <UploadCloudIcon className="w-8 h-8 text-gray-400 group-hover/upload:text-emerald-500 mb-1"/> <span className="text-xs font-medium text-gray-600 group-hover/upload:text-emerald-600"> {images.length === 0 ? 'Unggah Gambar Utama' : 'Tambah Lagi'} </span> <span className="text-[10px] text-gray-400">Max 5MB</span> <input id="imageUploadInput" type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} ref={imageUploadRef}/> </label> )} </div> <p className="text-xs text-gray-500 flex items-center"><HeroInfoIcon className="w-[13px] h-[13px] mr-1 text-gray-400"/> Gambar pertama jadi thumbnail utama.</p> </div> </div> <div className="flex flex-col sm:flex-row justify-between items-center pt-6 gap-4"> <button onClick={() => setCurrentTab("requirements")} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 transition-colors text-base"><ChevronLeftIcon className="w-5 h-5"/> Kembali</button> <button onClick={handlePublish} disabled={!isGalleryComplete || isUploading} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"> {isUploading ? <Loader2Icon className="w-5 h-5 animate-spin mr-2"/> : <LucideCheckCircleIcon className="w-5 h-5 mr-1.5"/>} {isUploading ? "Menerbitkan..." : "Terbitkan Produk"} </button> </div> </div> )}
           </div>
         </div>
-      </header>
-
-      {/* Main */}
-      <main className="py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          {currentTab === "overview" && (
-            <div className="bg-white rounded-lg shadow p-8">
-              <h2 className="text-xl font-semibold mb-6">Product Overview</h2>
-
-              {/* Title */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Product Title
-                  </label>
-                  <input
-                    type="text"
-                    value={productTitle}
-                    onChange={(e) => setProductTitle(e.target.value)}
-                    placeholder="I will..."
-                    className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    Keep it concise and clear.
-                  </p>
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Category
-                  </label>
-                  <select
-                    className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                    value={selectedCategory}
-                    onChange={handleCategoryChange}
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Sub-Category */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Sub-Category
-                  </label>
-                  <select
-                    className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                    value={selectedSubcategory}
-                    onChange={(e) => setSelectedSubcategory(e.target.value)}
-                    disabled={!selectedCategory}
-                  >
-                    <option value="">
-                      {selectedCategory
-                        ? "Select a sub-category"
-                        : "Please select a category first"}
-                    </option>
-                    {availableSubcategories.map((sub) => (
-                      <option key={sub} value={sub}>
-                        {sub}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Search Tags */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Search Tags
-                  </label>
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    placeholder="Type a tag and press enter"
-                    className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
-                      >
-                        {tag}
-                        <button
-                          onClick={() => handleRemoveTag(index)}
-                          className="ml-2 text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Add keywords separated by comma or Enter key.
-                  </p>
-                </div>
-
-                {/* Continue Button */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setCurrentTab("pricing")}
-                    className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition font-medium"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Pricing Tab Content */}
-          {currentTab === "pricing" && (
-            <div className="bg-white rounded-lg shadow p-8">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">
-                Pricing
-              </h2>
-
-              <div className="space-y-8">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Price ($)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-0 inset-y-0 flex items-center pl-4 text-gray-500">
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      value={productPrice}
-                      onChange={(e) => setProductPrice(e.target.value)}
-                      className="w-full pl-8 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                      placeholder="25"
-                      min="5"
-                    />
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Minimum price is $5
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Delivery Time
-                  </label>
-                  <div className="relative">
-                    <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
-                      <option value="">Select delivery time</option>
-                      <option value="1">1 day</option>
-                      <option value="2">2 days</option>
-                      <option value="3">3 days</option>
-                      <option value="5">5 days</option>
-                      <option value="7">7 days</option>
-                      <option value="14">14 days</option>
-                      <option value="30">30 days</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Number of Revisions
-                  </label>
-                  <div className="relative">
-                    <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
-                      <option value="0">No revisions</option>
-                      <option value="1">1 revision</option>
-                      <option value="2">2 revisions</option>
-                      <option value="3">3 revisions</option>
-                      <option value="unlimited">Unlimited revisions</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10 flex justify-between">
-                <button
-                  onClick={() => setCurrentTab("overview")}
-                  className="text-gray-600 py-3 px-6 rounded-lg hover:bg-gray-100 transition font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setCurrentTab("description")}
-                  className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Description Tab Content */}
-          {currentTab === "description" && (
-            <div className="bg-white rounded-lg shadow p-8">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">
-                Description
-              </h2>
-
-              <div className="space-y-8">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    className="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
-                    placeholder="Describe your service in detail..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    Min. 120 characters. Be detailed and specific about what
-                    your service includes.
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                  <h3 className="font-medium text-gray-800 mb-3">
-                    What's Included
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Add the key features of what you'll deliver to buyers
-                  </p>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <input
-                        type="text"
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        placeholder="e.g., Source files included"
-                      />
-                      <button className="ml-2 text-gray-400 hover:text-gray-600 p-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                      </button>
-                    </div>
-                    <button className="text-blue-600 hover:text-blue-700 font-medium flex items-center mt-2">
-                      <svg
-                        className="w-5 h-5 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        ></path>
-                      </svg>
-                      Add Another Item
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10 flex justify-between">
-                <button
-                  onClick={() => setCurrentTab("pricing")}
-                  className="text-gray-600 py-3 px-6 rounded-lg hover:bg-gray-100 transition font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setCurrentTab("requirements")}
-                  className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Requirements Tab Content */}
-          {currentTab === "requirements" && (
-            <div className="bg-white rounded-lg shadow p-8">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">
-                Requirements
-              </h2>
-
-              <div className="space-y-6">
-                <p className="text-gray-600">
-                  Ask buyers for the information you need to start working on
-                  their order. Clear requirements help set expectations and
-                  avoid revisions.
-                </p>
-
-                <div className="space-y-4">
-                  <div className="p-5 border border-gray-200 rounded-lg bg-gray-50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-800">
-                          Question 1
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          What specifically do you need designed?
-                        </p>
-                      </div>
-                      <div className="flex items-center">
-                        <button className="text-gray-400 hover:text-gray-600 p-2">
-                          <svg
-                            className="w-5 h-5"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                          </svg>
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600 p-2">
-                          <svg
-                            className="w-5 h-5"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            ></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button className="flex items-center text-blue-600 hover:text-blue-700 font-medium mt-2">
-                    <svg
-                      className="w-5 h-5 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      ></path>
-                    </svg>
-                    Add a Question
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-10 flex justify-between">
-                <button
-                  onClick={() => setCurrentTab("description")}
-                  className="text-gray-600 py-3 px-6 rounded-lg hover:bg-gray-100 transition font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setCurrentTab("gallery")}
-                  className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Gallery Tab Content */}
-          {currentTab === "gallery" && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold mb-6">Gallery</h2>
-
-              <div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                  {images.map((img, index) => (
-                    <div
-                      key={index}
-                      className="relative border border-gray-200 rounded-md h-40 overflow-hidden"
-                    >
-                      <Image
-                        src={URL.createObjectURL(img)}
-                        alt={`Uploaded ${index}`}
-                        className="object-cover"
-                        fill
-                      />
-                      <button
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
-                      >
-                        <svg
-                          className="w-4 h-4 text-gray-600"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-
-                  {images.length < 5 && (
-                    <label className="border-2 border-dashed border-gray-300 rounded-md h-40 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
-                      <svg
-                        className="w-8 h-8 text-gray-400 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                      <span className="text-sm text-gray-500">
-                        Upload Image
-                      </span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                <p className="text-sm text-gray-500">
-                  You can upload up to 5 images (JPEG, PNG, GIF). Maximum file
-                  size: 5MB each.
-                </p>
-              </div>
-
-              <div className="mt-8 flex justify-between">
-                <button
-                  onClick={() => setCurrentTab("requirements")}
-                  className="text-gray-600 py-3 px-6 rounded-md hover:bg-gray-100"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handlePublish}
-                  className="bg-green-600 text-white py-3 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  Publish Product
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
     </div>
   );
 };
