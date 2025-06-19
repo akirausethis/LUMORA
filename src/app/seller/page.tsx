@@ -161,7 +161,7 @@ const SellerPage = () => {
   const stats = [
     { name: 'Total Produk Aktif', value: products.filter(p => p.status !== 'archived').length.toString(), icon: ArchiveIcon, color: 'text-blue-500', bgColor: 'bg-blue-50' },
     { name: 'Total Penjualan Selesai', value: formatPriceForStat(totalSales), icon: DollarSignIcon, color: 'text-green-500', bgColor: 'bg-green-50' },
-    { name: 'Jumlah Pelanggan Unik', value: uniqueCustomers.toString(), icon: UsersIcon, color: 'text-purple-500', bgColor: 'bg-purple-50' },
+    { name: 'Jumlah Pelanggan', value: uniqueCustomers.toString(), icon: UsersIcon, color: 'text-purple-500', bgColor: 'bg-purple-50' },
   ];
 
   if (isLoading) { /* ... JSX Loading ... */ 

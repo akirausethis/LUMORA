@@ -1,7 +1,7 @@
 // src/app/portfolio/page.tsx
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react"; // Menambahkan useRef
 import Image from "next/image";
 import { dummyPosts, seedPortfolioPostsToLocalStorage } from "../../../lib/dummyPosts"; // Pastikan path benar
 import { SearchIcon, CompassIcon, Edit3Icon, ImageOffIcon } from "lucide-react";
@@ -36,6 +36,10 @@ export default function DesignerPortfolioPage() {
   const [allPosts, setAllPosts] = useState<PortfolioPost[]>([]);
   const [currentUserData, setCurrentUserData] = useState<CurrentUser | null>(null);
 
+  // useRef untuk memastikan seeding hanya sekali per sesi aplikasi
+  const hasSeeded = useRef(false);
+
+  // useEffect pertama: Memuat currentUserData hanya sekali saat mount
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -43,10 +47,19 @@ export default function DesignerPortfolioPage() {
         setCurrentUserData(JSON.parse(storedUser));
       } catch (error) {
         console.error("Gagal parse currentUser di PortfolioPage:", error);
+        setCurrentUserData(null); // Reset jika ada error parse
       }
     }
+  }, []); // Dependency array kosong: hanya berjalan sekali saat mount
 
-    seedPortfolioPostsToLocalStorage(); // Pastikan fungsi ini ada dan diimpor dengan benar
+  // useEffect kedua: Memuat dan memproses semua postingan
+  useEffect(() => {
+    // Pastikan seeding hanya berjalan sekali per sesi aplikasi
+    if (!hasSeeded.current) {
+        seedPortfolioPostsToLocalStorage();
+        hasSeeded.current = true;
+    }
+
     const storedPosts = localStorage.getItem("designerPosts");
     let postsFromStorage: PortfolioPost[] = [];
     if (storedPosts) {
@@ -60,13 +73,15 @@ export default function DesignerPortfolioPage() {
     }
 
     // Gabungkan dummyPosts dengan yang dari localStorage
-    const combined = [...dummyPosts.map(post => ({...post}))]; // Salin dummyPosts untuk menghindari mutasi
+    // Pastikan dummyPosts disalin agar tidak memutasi array aslinya
+    const combined: PortfolioPost[] = [...dummyPosts.map(post => ({...post}))];
 
     postsFromStorage.forEach(storagePost => {
         let authorName = storagePost.author;
-        let avatar = storagePost.authorAvatar; // Gunakan field yang sudah ada jika ada
+        let avatar = storagePost.authorAvatar;
 
-        // Update author dan avatar jika post dibuat oleh currentUser yang sedang login
+        // Gunakan nilai currentUserData dari state.
+        // Jika currentUserData berubah, useEffect ini akan re-run.
         if (currentUserData && storagePost.authorId === currentUserData.id) {
             authorName = currentUserData.fullName || currentUserData.username;
             avatar = currentUserData.profilePictureUrl;
@@ -76,20 +91,28 @@ export default function DesignerPortfolioPage() {
         const postWithUpdatedAuthor: PortfolioPost = {
             ...storagePost,
             author: authorName,
-            authorAvatar: avatar // Pastikan ini ada di tipe PortfolioPost
+            authorAvatar: avatar
         };
 
         if (existingPostIndex === -1) {
             combined.push(postWithUpdatedAuthor);
         } else {
-            combined[existingPostIndex] = postWithUpdatedAuthor; // Update dengan info author yang mungkin baru
+            // Update jika post sudah ada (misalnya untuk memperbarui info author yang mungkin berubah)
+            combined[existingPostIndex] = postWithUpdatedAuthor;
         }
     });
     
     // Urutkan berdasarkan tanggal pembuatan (jika ada), terbaru dulu
-    setAllPosts(combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()));
+    // Gunakan fungsi pengurutan yang stabil atau pastikan objek di dalam array tidak berubah referensi
+    const sortedPosts = combined.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+    });
 
-  }, [currentUserData]); // Tambahkan currentUserData sebagai dependency
+    setAllPosts(sortedPosts);
+
+  }, [currentUserData]); // Dependency: useEffect ini akan re-run jika currentUserData berubah
 
   const filteredPosts = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase().trim();

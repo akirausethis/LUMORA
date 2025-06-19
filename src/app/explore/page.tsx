@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { seedProductsToLocalStorage, dummyProducts } from '../../../lib/dummyProducts'; // Pastikan path dan nama ekspor dummyProducts benar
+import { seedProductsToLocalStorage } from '../../../lib/dummyProducts'; // Pastikan path dan nama ekspor dummyProducts benar
 import NotificationModal, { ModalButton } from '@/components/NotificationModal';
 import { SearchIcon, ChevronDownIcon, StarIcon, HeartIcon, FilterIcon, XIcon as CloseIcon } from 'lucide-react'; // Contoh ikon
 
@@ -300,7 +300,7 @@ const ExplorePage = () => {
                     </div>
                     <div className="p-4 flex flex-col flex-grow">
                         {seller && (
-                            <Link href={`/sellerprofile/${seller.id}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 mb-2 group/seller-link">
+                            <Link href={`/sellerstore/${seller.id}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 mb-2 group/seller-link">
                                 <Image src={seller.profilePictureUrl || '/profile-placeholder.png'} alt={seller.username} width={24} height={24} className="w-6 h-6 rounded-full object-cover"/>
                                 <span className="text-xs font-medium text-gray-600 group-hover/seller-link:text-emerald-600 group-hover/seller-link:underline line-clamp-1" title={seller.storeName || seller.username}>
                                     {seller.storeName || seller.username}

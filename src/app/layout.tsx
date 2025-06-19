@@ -14,6 +14,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'LUMORA',
   description: 'A complete e-commerce application with Next.js and Wix',
+    icons: {
+    icon: '/lumora.png'
+  },
 };
 
 export default function RootLayout({

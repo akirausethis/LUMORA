@@ -9,7 +9,7 @@ import NotificationModal, { ModalButton } from '@/components/NotificationModal';
 import {
     ArrowLeftIcon, CheckCircleIcon as LucideCheckCircleIcon, ClockIcon, MessageSquareIcon,
     PaperclipIcon, SendIcon, DownloadIcon, ShieldCheckIcon, XIcon, UserCircleIcon as LucideUserCircleIcon,
-    UploadCloudIcon, Edit2Icon
+    UploadCloudIcon, Edit2Icon, AlertTriangleIcon // Menambahkan AlertTriangleIcon untuk peringatan
 } from "lucide-react";
 
 // --- Definisikan tipe yang dibutuhkan di sini ---
@@ -47,10 +47,12 @@ interface ProgressUpdate {
   percentage: number;
   attachments?: { name: string; url: string; type?: 'image' | 'zip' | 'other' }[];
 }
+// MODIFIKASI: Tambahkan 'icon?: React.ReactNode;' ke ModalStateType
 interface ModalStateType {
   isOpen: boolean; title: string; message: React.ReactNode;
   type: 'success' | 'error' | 'warning' | 'info' | 'confirmation';
   buttons: ModalButton[]; onClose?: () => void;
+  icon?: React.ReactNode; // Properti ini ditambahkan
 }
 interface ProgressModalStateType {
     isOpen: boolean;
@@ -188,6 +190,31 @@ const ProgressPage = () => {
       if (e.target) e.target.value = "";
     }
   };
+
+  // Fungsi untuk mendeteksi informasi pribadi
+  const containsPrivateInfo = (text: string): boolean => {
+    const lowerCaseText = text.toLowerCase();
+    // Regex untuk nomor telepon (contoh sederhana, bisa lebih kompleks)
+    // Mendeteksi +62, 08xx, atau format angka panjang. Memasukkan spasi, strip, atau titik
+    const phoneRegex = /(\+62|0)\s*\d{2,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}|\d{7,15}/g;
+
+    // Kata kunci dan pola untuk media sosial/komunikasi
+    const socialMediaKeywords = [
+        /@[\w\d._-]+/, // @username
+        /wa\.me\//, /whatsapp\.com\//, // WhatsApp
+        /t\.me\//, /telegram\.me\//, // Telegram
+        /line\.me\//, // Line
+        /instagram\.com\//, /ig\.com\//, // Instagram
+        /facebook\.com\//, /fb\.com\//, // Facebook
+        /linkedin\.com\//, // LinkedIn
+        /discord\./, // Discord
+        /email|e-mail|gmail|yahoo|outlook/ // Kata kunci email
+    ];
+
+    return phoneRegex.test(lowerCaseText) || socialMediaKeywords.some(regex => regex.test(lowerCaseText));
+  };
+
+
   const handleSendMessage = async () => { 
     if (!newMessage.trim() && !selectedChatFile) return;
     if (!currentUserData) {
@@ -195,6 +222,34 @@ const ProgressPage = () => {
         return;
     }
     setIsSendingMessage(true);
+
+    // --- LOGIC DETEKSI INFORMASI PRIBADI ---
+    if (containsPrivateInfo(newMessage.trim())) {
+        setModalState({
+            isOpen: true,
+            title: "Peringatan Keamanan!",
+            message: (
+                <>
+                    <p className="mb-3">
+                        Demi keamanan dan kenyamanan transaksi, kami sangat menyarankan untuk tidak membagikan informasi kontak pribadi (nomor telepon, email, akun media sosial, dll.) di luar platform chat Lumora.
+                    </p>
+                    <p className="font-semibold text-gray-700">
+                        Semua komunikasi dan transaksi sebaiknya dilakukan melalui fitur yang tersedia di website ini.
+                    </p>
+                </>
+            ),
+            type: 'warning',
+            buttons: [
+                { text: "Oke, Saya Mengerti", onClick: closeGenericModal, className: 'bg-emerald-500 text-white hover:bg-emerald-600' }
+            ],
+            icon: <AlertTriangleIcon className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+        });
+        setIsSendingMessage(false);
+        return; // Hentikan pengiriman pesan
+    }
+    // --- AKHIR LOGIC DETEKSI ---
+
+
     let fileData: ChatMessage['file'] | undefined = undefined;
     let uploadedImageUrlForChat: string | undefined = undefined;
 
@@ -362,6 +417,7 @@ const ProgressPage = () => {
                             > 
                                 <LucideCheckCircleIcon className="w-5 h-5"/> Selesaikan Pesanan 
                             </button> 
+                            
                             <button className="w-full flex items-center justify-center gap-2 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium py-2.5 px-4 rounded-lg transition-colors"> <ShieldCheckIcon className="w-5 h-5"/> Ajukan Komplain </button> 
                         </> )} 
                         {viewingAs === 'seller' && ( <p className="text-sm text-gray-500 italic">Aksi oleh pembeli.</p> )} 
