@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.png" alt="Lumora Logo" width="120" />
   <h1>✨ LUMORA ✨</h1>
-  <p><strong>Platform Freelance & E-Commerce Kreatif No. 1 di Indonesia</strong></p>
+  <p><strong>Platform Freelance & E-Commerce Kreatif</strong></p>
 
   <p>
     <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js" alt="Next.js" /></a>
