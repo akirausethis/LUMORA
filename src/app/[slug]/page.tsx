@@ -1,4 +1,10 @@
-import { CheckCircle, Star, ShieldCheck, MessageCircleMore, StarHalf } from "lucide-react";
+import {
+  CheckCircle,
+  Star,
+  ShieldCheck,
+  MessageCircleMore,
+  StarHalf,
+} from "lucide-react";
 import ProductImages from "@/components/ProductImages";
 import Add from "@/components/Add";
 import CustomizeProducts from "@/components/CustomizeProducts";
@@ -18,8 +24,9 @@ const SinglePage = () => {
 
         {/* Deskripsi Singkat */}
         <p className="text-gray-600 text-lg">
-          Dengan pengalaman lebih dari 3 tahun dalam mengedit video promosi, after movie, dan konten media sosial, saya
-          membantu klien menghadirkan cerita yang kuat dan visual yang memikat.
+          Dengan pengalaman lebih dari 3 tahun dalam mengedit video promosi,
+          after movie, dan konten media sosial, saya membantu klien menghadirkan
+          cerita yang kuat dan visual yang memikat.
         </p>
 
         {/* Benefit Section */}
@@ -82,19 +89,32 @@ const SinglePage = () => {
           {[...Array(5)].map((_, i) => (
             <Star key={i} size={20} />
           ))}
-          <span className="text-gray-700 text-sm ml-2">(5.0 dari 50+ review)</span>
+          <span className="text-gray-700 text-sm ml-2">
+            (5.0 dari 50+ review)
+          </span>
         </div>
 
         {/* Testimoni */}
         <div className="flex flex-col gap-4 mt-4">
           <h3 className="text-lg font-semibold">Apa kata klien?</h3>
           <div className="bg-gray-100 p-4 rounded-lg shadow-sm">
-            <p className="text-gray-700 italic">“Hasil editannya keren banget! Detail, profesional, dan cepet banget responnya. Gak nyesel hire dia buat project event kampus kami.”</p>
-            <span className="block mt-2 text-sm text-gray-500">– Rina, Event Organizer</span>
+            <p className="text-gray-700 italic">
+              “Hasil editannya keren banget! Detail, profesional, dan cepet
+              banget responnya. Gak nyesel hire dia buat project event kampus
+              kami.”
+            </p>
+            <span className="block mt-2 text-sm text-gray-500">
+              – Rina, Event Organizer
+            </span>
           </div>
           <div className="bg-gray-100 p-4 rounded-lg shadow-sm">
-            <p className="text-gray-700 italic">“Dia ngerti banget maunya klien. Video promosi toko online ku langsung keliatan pro, banyak yang nanya siapa editornya!”</p>
-            <span className="block mt-2 text-sm text-gray-500">– Dimas, Owner Clothing Brand</span>
+            <p className="text-gray-700 italic">
+              “Dia ngerti banget maunya klien. Video promosi toko online ku
+              langsung keliatan pro, banyak yang nanya siapa editornya!”
+            </p>
+            <span className="block mt-2 text-sm text-gray-500">
+              – Dimas, Owner Clothing Brand
+            </span>
           </div>
         </div>
       </div>

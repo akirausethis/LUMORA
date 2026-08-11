@@ -1,26 +1,38 @@
 // components/CategoryTabs.tsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface CategoryTabsProps {
   onSubcategorySelect: (subcategory: string) => void;
 }
 
 const categories = [
-  "Character Design", "Illustration", "Concept Art", "UI/UX Design",
-  "Branding", "Merch Design", "Graphic Assets", "3D Modeling",
-  "Animation", "Emotes & Badges", "Custom Requests"
+  "Character Design",
+  "Illustration",
+  "Concept Art",
+  "UI/UX Design",
+  "Branding",
+  "Merch Design",
+  "Graphic Assets",
+  "3D Modeling",
+  "Animation",
+  "Emotes & Badges",
+  "Custom Requests",
 ];
 
 const subcategories: Record<string, string[]> = {
   "Character Design": ["Original Characters (OC)", "D&D Characters", "Fanart"],
-  "Illustration": ["Portraits", "Full Body", "Scenic Backgrounds"],
-  "Concept Art": ["Environment Design", "Creature Design", "Weapon/Item Design"],
+  Illustration: ["Portraits", "Full Body", "Scenic Backgrounds"],
+  "Concept Art": [
+    "Environment Design",
+    "Creature Design",
+    "Weapon/Item Design",
+  ],
   "UI/UX Design": ["App Mockups", "Website Layouts", "Game Interfaces"],
-  "Branding": ["Logo Design", "Color Palette", "Visual Identity"],
+  Branding: ["Logo Design", "Color Palette", "Visual Identity"],
   "Merch Design": ["Sticker Design", "T-Shirt Design", "Keychain Art"],
   "Graphic Assets": ["Icons", "UI Elements", "Game Assets"],
   "3D Modeling": ["Character Models", "Props", "Low-Poly Art"],
-  "Animation": ["GIFs", "Character Animation", "Animated Emotes"],
+  Animation: ["GIFs", "Character Animation", "Animated Emotes"],
   "Emotes & Badges": ["Twitch Emotes", "Discord Stickers", "Subscriber Badges"],
   "Custom Requests": ["Couple Art", "Pet Portraits", "Fantasy Scenes"],
 };

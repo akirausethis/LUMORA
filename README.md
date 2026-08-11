@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Lumora
+
+Lumora is a premium e-commerce and freelance platform tailored for the creative industry. It connects talented designers, illustrators, video editors, and content creators with clients seeking top-tier creative services.
+
+## Features
+
+- **Modern Minimalist UI**: A sleek, fully responsive user interface built with Tailwind CSS, featuring glassmorphism and smooth micro-interactions.
+- **Creator Portfolios**: A dedicated gallery to showcase creative works, categorized by design disciplines.
+- **Service Catalog**: Browse, search, and filter through various creative services ranging from Logo Design to Voice Over.
+- **Interactive Dashboard**: Track projects, manage sales, and communicate with clients seamlessly.
+- **Next.js App Router**: Lightning-fast performance and SEO optimization powered by the latest Next.js architecture.
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- `/src/app` - Core Next.js App Router pages (Home, Explore, Portfolio, etc.)
+- `/src/components` - Reusable React components (Navbar, Footer, ProductCards, etc.)
+- `/public` - Static assets like images and generic icons.
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This project is proprietary.

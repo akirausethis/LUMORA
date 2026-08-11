@@ -3,7 +3,10 @@ import { UsersIcon as LucideUsersIcon } from "lucide-react"; // Menggunakan alia
 
 const AboutUs = () => {
   return (
-    <section data-aos="fade-up" className="py-16 md:py-24 bg-gradient-to-b from-emerald-50 via-teal-50 to-sky-100">
+    <section
+      data-aos="fade-up"
+      className="py-16 md:py-24 bg-gradient-to-b from-emerald-50 via-teal-50 to-sky-100"
+    >
       <div className="container mx-auto px-6 md:px-12 text-center">
         <div className="mb-8 inline-flex justify-center items-center">
           <div className="p-4 bg-white rounded-full shadow-lg transform transition-all duration-300 hover:scale-110">
@@ -14,7 +17,14 @@ const AboutUs = () => {
           Tentang <span className="text-emerald-600">Lumora</span>
         </h2>
         <p className="text-md sm:text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
-          Lumora adalah platform inovatif yang dirancang untuk menjembatani kesenjangan antara freelancer berbakat di bidang desain dan kreatif dengan klien yang mencari talenta terbaik. Misi kami adalah memberdayakan para pekerja lepas untuk memamerkan portofolio mereka, mendapatkan proyek yang bermakna, dan membangun jaringan profesional yang kuat, semua dalam satu wadah yang intuitif dan mendukung. Kami percaya pada kekuatan kreativitas dan kolaborasi untuk menciptakan hasil yang luar biasa.
+          Lumora adalah platform inovatif yang dirancang untuk menjembatani
+          kesenjangan antara freelancer berbakat di bidang desain dan kreatif
+          dengan klien yang mencari talenta terbaik. Misi kami adalah
+          memberdayakan para pekerja lepas untuk memamerkan portofolio mereka,
+          mendapatkan proyek yang bermakna, dan membangun jaringan profesional
+          yang kuat, semua dalam satu wadah yang intuitif dan mendukung. Kami
+          percaya pada kekuatan kreativitas dan kolaborasi untuk menciptakan
+          hasil yang luar biasa.
         </p>
         <div className="mt-10">
           <a // Menggunakan <a> jika ini link eksternal, atau <Link> dari next/link jika internal

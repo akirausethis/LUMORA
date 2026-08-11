@@ -1,4 +1,4 @@
-// File: C:\Users\Kelvin\DEI2025\Lumora\src\app\api\upload\route.ts
+// File: C:\Users\LENOVO\lumora-e-commerce\src\app\api\upload\route.ts
 import * as entry from '../../../../../src/app/api/upload/route.js'
 import type { NextRequest } from 'next/server.js'
 

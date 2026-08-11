@@ -183,14 +183,14 @@ const ExplorePage = () => {
   return (
     <>
       <NotificationModal {...modalState} />
-      <div className='min-h-screen bg-gray-50 selection:bg-emerald-500 selection:text-white'>
+      <div className='min-h-screen bg-white selection:bg-emerald-100 selection:text-emerald-900'>
         {/* Header Section dengan Search Bar Besar */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white pt-16 pb-20 px-4 md:px-8">
+        <div className="bg-slate-50 pt-24 pb-16 px-4 md:px-8 border-b border-gray-100">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4 leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
               Temukan Jasa Desain & Kreatif
             </h1>
-            <p className="text-lg sm:text-xl text-emerald-100 mb-8">
+            <p className="text-lg sm:text-xl text-gray-500 mb-8 max-w-2xl mx-auto">
               Dapatkan layanan berkualitas dari para profesional untuk proyek Anda.
             </p>
             <div className="relative">
@@ -200,7 +200,7 @@ const ExplorePage = () => {
               <input
                 type="text"
                 placeholder="Cari jasa (misal: logo, ilustrasi, video editor)"
-                className="w-full pl-12 sm:pl-16 pr-6 py-4 text-md sm:text-lg border-0 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-400/50 shadow-lg text-gray-800 placeholder-gray-500"
+                className="w-full pl-12 sm:pl-16 pr-6 py-4 text-md sm:text-lg border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-gray-800 placeholder-gray-400 bg-white"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -232,7 +232,7 @@ const ExplorePage = () => {
                 {categories.map((category) => (
                   <button key={category} onClick={() => handleMainCategorySelect(category)}
                     className={`flex-shrink-0 px-5 py-3.5 text-sm font-medium transition-colors duration-150 ease-in-out focus:outline-none
-                      ${selectedMainCategory === category ? "bg-emerald-500 text-white border-b-2 border-emerald-700" : "text-gray-600 hover:text-emerald-700 hover:bg-gray-50 border-b-2 border-transparent"}`}>
+                      ${selectedMainCategory === category ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500" : "text-gray-500 hover:text-emerald-600 hover:bg-gray-50 border-b-2 border-transparent"}`}>
                     {category}
                   </button>
                 ))}
@@ -286,14 +286,14 @@ const ExplorePage = () => {
                 const seller = getSellerInfo(product.sellerId);
                 return (
                   <div key={product.id}
-                    className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden border border-gray-200/80"
+                    className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden border border-gray-100"
                     onClick={() => handleNavigateToProduct(product.id)}>
-                    <div className="relative w-full h-48 cursor-pointer overflow-hidden">
+                    <div className="relative w-full h-48 cursor-pointer overflow-hidden rounded-t-xl">
                       <Image src={product.image || '/placeholder-image.png'} alt={product.title} layout="fill"
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png';}} />
                       <div className="absolute top-2 right-2">
-                        <button aria-label="Favoritkan" className="p-1.5 bg-white/70 backdrop-blur-sm rounded-full text-gray-500 hover:text-pink-500 hover:bg-pink-100/80 transition-colors">
+                        <button aria-label="Favoritkan" className="p-1.5 bg-white/80 backdrop-blur-sm rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors shadow-sm">
                             <HeartIcon className="w-4 h-4"/>
                         </button>
                       </div>
@@ -307,7 +307,7 @@ const ExplorePage = () => {
                                 </span>
                             </Link>
                         )}
-                        <h3 className="font-semibold text-gray-800 text-sm leading-snug mb-1.5 line-clamp-2 h-10 cursor-pointer hover:text-emerald-700 transition-colors">
+                        <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1.5 line-clamp-2 h-10 cursor-pointer group-hover:text-emerald-600 transition-colors">
                             {product.title}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-yellow-500 mb-2">

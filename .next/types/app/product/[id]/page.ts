@@ -1,4 +1,4 @@
-// File: C:\Users\Kelvin\DEI2025\Lumora\src\app\product\[id]\page.tsx
+// File: C:\Users\LENOVO\lumora-e-commerce\src\app\product\[id]\page.tsx
 import * as entry from '../../../../../src/app/product/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

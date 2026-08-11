@@ -17,6 +17,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/register/page.js"
     ],
+    "/[slug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/[slug]/page.js"
+    ],
     "/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -37,36 +42,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/explore/page.js"
     ],
-    "/portfolio/page": [
+    "/product/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portfolio/page.js"
+      "static/chunks/app/product/[id]/page.js"
     ],
     "/addpost/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/addpost/page.js"
     ],
-    "/product/[id]/page": [
+    "/portfolio/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/product/[id]/page.js"
-    ],
-    "/setseller/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/setseller/[id]/page.css",
-      "static/chunks/app/setseller/[id]/page.js"
-    ],
-    "/seller/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/seller/page.js"
-    ],
-    "/addproduct/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/addproduct/page.js"
+      "static/chunks/app/portfolio/page.js"
     ],
     "/cart/page": [
       "static/chunks/webpack.js",
@@ -78,15 +67,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/orders/page.js"
     ],
-    "/portfolio/[id]/page": [
+    "/profile/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portfolio/[id]/page.js"
-    ],
-    "/_not-found/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/profile/[id]/page.js"
     ]
   }
 }

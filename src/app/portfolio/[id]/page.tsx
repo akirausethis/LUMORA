@@ -43,7 +43,7 @@ interface PortfolioImagesProps {
 
 const PortfolioImages: React.FC<PortfolioImagesProps> = ({ images, title }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(
-    images.length > 0 ? images[0] : null
+    images.length > 0 ? images[0] : null,
   );
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null);
@@ -91,8 +91,19 @@ const PortfolioImages: React.FC<PortfolioImagesProps> = ({ images, title }) => {
           />
           <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <span className="text-white text-lg font-semibold flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               Lihat Penuh
             </span>
@@ -159,7 +170,6 @@ const PortfolioImages: React.FC<PortfolioImagesProps> = ({ images, title }) => {
 };
 // --- END: PortfolioImages Component dengan Preview yang Disesuaikan dan Perbaikan Gambar ---
 
-
 export default function SinglePost({ params }: SinglePostProps) {
   const { id } = params;
   const [post, setPost] = useState<Post | null>(null);
@@ -220,8 +230,8 @@ export default function SinglePost({ params }: SinglePostProps) {
     post.images && post.images.length > 0
       ? post.images
       : post.image
-      ? [post.image]
-      : [];
+        ? [post.image]
+        : [];
 
   return (
     <div className="container mx-auto px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64 relative py-12 bg-white rounded-lg shadow-lg my-8">

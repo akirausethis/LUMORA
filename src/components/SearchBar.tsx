@@ -20,7 +20,13 @@ const SearchBar = () => {
       className="flex items-center bg-gray-100 p-2 rounded-md flex-1 shadow-sm focus-within:shadow-md transition-shadow duration-200"
       onSubmit={handleSearch}
     >
-      <Image src="/search.png" alt="Search Icon" width={20} height={20} className="ml-2 text-gray-500" />
+      <Image
+        src="/search.png"
+        alt="Search Icon"
+        width={20}
+        height={20}
+        className="ml-2 text-gray-500"
+      />
       <input
         type="text"
         name="name"
